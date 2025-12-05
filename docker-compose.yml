@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: nozzle_postgres
+    environment:
+      POSTGRES_DB: nozzle_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nozzle_network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: nozzle_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nozzle_network
+
+  # MinIO对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: nozzle_minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - nozzle_network
+
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: nozzle_mosquitto
+    ports:
+      - "1883:1883"
+      - "9002:9002"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+    networks:
+      - nozzle_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  mosquitto_data:
+
+networks:
+  nozzle_network:
+    driver: bridge
